@@ -1,0 +1,35 @@
+#/bin/bash
+###
+# Parses output of lsof for IP-connections and prints in this format: executable, PID, user name, UID, connections of process.
+###
+
+r=; b=; e=; n=; compact=
+
+for t in ${@}; do
+	
+	[ ${t} = usage   ] && { e	cho "   ${0} [color] [compact] [usage]"; exit 0; }
+	[ ${t} = color   ] && { r="\033[31;1m"; b="\033[34;1m"; e="\033[1m"; n="\033[0m"; }
+	[ ${t} = compact ] && compact=1
+	
+	done
+	
+	conn=$(lsof -i -F cnuLP)
+	
+	cmd=; pid=; usr=; uid=; addr=; l_count=; count=0
+	
+	for t in ${conn}; do
+		 
+		 case ${t:0:1} in
+		 p)   pid=${t:1}; let count++; l_count=${count};;
+		 c)   cmd=${t:1};;
+		 u)   uid=${t:1};;
+		 L)   usr=${t:1};;
+		 P)   proto=${t:1};;
+		 n)   addr=${t:1}; [ ! -z ${compact} ] && mod="${r}->${n}${e}" || mod="\n\t${r}|${n}\n\t${e}"; addr="${addr/->/${mod}}";;
+		 esac
+		  
+		  [ ! -z ${l_count}	] && printf "${l_count}: "; l_count=
+		  [ ! -z ${usr}		] && printf "${cmd} [${e}${pid}${n}] ${b}${usr}${n}:${e}${uid}${n}\n\n"; usr=
+		  [ ! -z ${addr}	] && printf "   ${b}${proto}${n}: ${addr}${n}\n\n"; addr=
+		   
+done
